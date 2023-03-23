@@ -1,0 +1,75 @@
+---
+title: "DATA_316_Mini_Project"
+author: "Riley Fiske, Emily Liddell"
+date: "2023-03-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(arm)
+```
+
+## Data Importation
+
+```{r}
+
+# Variables from https://data.census.gov/mdat/#/search?ds=ACSPUMS1Y2021
+
+mn_pums <- read.csv(file = "https://raw.githubusercontent.com/rdfiske17/DATA316MiniProject/main/mn_nums.csv")
+
+mn_pums <- mn_pums %>%
+  filter(PINCP >= 0) %>%
+  mutate(SEX = factor(SEX, levels=c(1,2), labels = c("Male","Female")))
+
+```
+
+## Data Visualization
+
+```{r}
+
+# Put your graphs of initial data viz. here
+
+```
+
+## Model 1 and starting visualization
+
+```{r}
+
+mod1 <- glm(log(PINCP) ~ JWMNP + VEH + SEX + AGEP + WKHP, data = mn_pums, family = "gaussian")
+summary(mod1)
+beta1 <- coef(mod1)
+beta1
+
+func.1.JWMNP_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Female
+func.1.JWMNP_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Male
+ggplot(mn_pums, aes(x = JWMNP)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.JWMNP_female, color="red") +
+  geom_function(fun = func.1.JWMNP_male, color = "blue")
+
+func.1.VEH_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Female
+func.1.VEH_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP)   + beta1[[3]]*x +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Male
+ggplot(mn_pums, aes(x = VEH)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.VEH_female, color="red") +
+  geom_function(fun = func.1.VEH_male, color = "blue")
+
+func.1.WKHP_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x)} #Female
+func.1.WKHP_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP)   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x)} #Male
+ggplot(mn_pums, aes(x = WKHP)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.WKHP_female, color="red") +
+  geom_function(fun = func.1.WKHP_male, color = "blue")
+
+```
+
+## Model 2?
+
+```{r}
+
+
+
+```
