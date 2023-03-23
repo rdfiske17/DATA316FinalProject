@@ -1,0 +1,217 @@
+---
+title: "Census Data with Tidycensus"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidycensus) # You will probably need to install tidycensus
+library(tidyverse)
+
+# census_api_key("YOUR KEY GOES HERE", install = TRUE)
+```
+
+Adapted from [*Analyzing US Census Data: Methods, Maps, and Models in R*](https://walker-data.com/census-r/)by Kyle Walker. If you want to learn more about Census Data, I highly recommend checking out this book.
+
+## The American Community Survey
+
+The American Community Survey (ACS) is a demographics survey program conducted by the U.S. Census Bureau since 2005. It regularly gathers information previously contained only in the long form of the decennial census, including ancestry, citizenship, educational attainment, income, language proficiency, migration, disability, employment, and housing characteristics.
+
+In addition to aggregate data, the Census Bureau also releases **microdata** (individual-level data). In many cases, microdata reflect responses to surveys that are de-identified and anonymized, then prepared in datasets that include rich detail about survey responses. These datasets, named the Public Use Microdata Series (PUMS), allow for detailed cross-tabulations not available in aggregated data.
+
+The ACS PUMS is available in both 1-year and 5-year versions. The 1-year PUMS covers about 1 percent of the US population, whereas the 5-year PUMS covers about 5 percent. The PUMS microdata is a subsample of the ACS data that is used for generating the published aggregate tables.
+
+## Step 1: Install tidycensus and get an API key
+
+To get started with tidycensus, users should install the package with `install.packages("tidycensus")` if not yet installed; load the package with `library("tidycensus")`; and set their Census API key with the `census_api_key()` function. API keys can be obtained at <https://api.census.gov/data/key_signup.html>. After you've signed up for an API key, be sure to activate the key from the email you receive from the Census Bureau so it works correctly. Declaring `install = TRUE` when calling `census_api_key()` will install the key for use in future R sessions, which may be convenient for many users.
+
+```{r}
+#census_api_key("a52920962c6456019a25d0024dcd76f6636491a1", install = TRUE)
+readRenviron("~/.Renviron")
+```
+
+## Step 2: Download some data
+
+American Community Survey microdata are available in **tidycensus** by using the `get_pums()` function, which communicates with the Census API and returns PUMS data.
+
+`get_pums()` requires specifying one or more variables and the state for which you'd like to request data. For national-level analyses, `state = 'all'` *can* get data for the entire USA by iterating over all US states, but the data can take some time to download depending on the user's internet connection. The `get_pums()` function defaults to the 5-year ACS with `survey = "acs5"`; 1-year ACS data is available with `survey = "acs1"`. Data are available from 2017 through 2021 (but not 2020 for the 1-year ACS due to low response rates around the pandemic).
+
+For this project, you will probably want to choose a single state (or a few neighboring states) and a single year (ACS data is not 100% consistent across years because the questionnaire gets updated).
+
+Let's take a look at a first example using `get_pums()` to request microdata for Minnesota from the 1-year 2021 ACS with information on sex, age (`AGEP`), and household type (`HHT`):
+
+
+
+```{r}
+mn_pums_filtered <- read.csv("https://raw.githubusercontent.com/rdfiske17/DATA316MiniProject/main/mn_nums.csv")
+mn_pums_filtered <- filter(mn_pums_filtered, PINCP >= 0)
+```
+
+
+  variables_filter = list(
+    AGEP = 15:120,
+    VEH = 0:6,
+    WKHP = 1:99,
+    JWMNP = 1:200,
+    COW = 1:8,
+    HHLDRRAC1P = 1:9,
+    PINCP = 1:4209995
+  ),
+  
+```{r}
+ggplot(data = mn_pums_filtered, aes(x = VEH)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = AGEP)) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = SEX)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = WKHP)) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = JWMNP)) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = log(JWMNP))) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = ESR)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = COW)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = log(PINCP))) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = HINS4)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = HHLDRRAC1P)) +
+  geom_histogram(stat = "count")
+
+
+mn_pums_filtered2  <- filter(mn_pums_filtered, HHLDRRAC1P != 1)
+
+ggplot(mn_pums_filtered2, aes(x = JWMNP, y = log(PINCP))) +
+  geom_jitter(aes( color = as.factor(HHLDRRAC1P)), alpha = 0.2 )
+
+ggplot(mn_pums_filtered, aes(x = JWMNP, y = PINCP)) +
+  geom_jitter(aes( color = as.factor(HINS4)), alpha = 0.2 )
+```
+```{r}
+mod0 <- glm(log(PINCP) ~ JWMNP + VEH + SEX_label + AGEP + WKHP, data = mn_pums_filtered)
+summary(mod0)
+
+mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums_filtered)
+summary(mod1)
+
+mod2 <- glm(log(PINCP) ~ log(JWMNP) + VEH + AGEP + WKHP, data = mn_pums_filtered)
+summary(mod2)
+
+mod3 <- glm(log(PINCP) ~ log(JWMNP) + VEH + WKHP, data = mn_pums_filtered)
+summary(mod3)
+
+mod4 <- glm(log(PINCP) ~ log(JWMNP) +  WKHP, data = mn_pums_filtered)
+summary(mod4)
+
+mod5 <- glm(log(PINCP) ~ WKHP, data = mn_pums_filtered)
+summary(mod5)
+```
+
+```{r}
+anova(mod5, mod4, mod3,mod2,mod1, test="Chisq")
+```
+
+  
+  
+```{r}
+
+ggplot (mn_pums_filtered) +
+  geom_jitter(aes(x = log(JWMNP), y = log(PINCP)))
+
+ggplot (mn_pums_filtered) +
+  geom_jitter(aes(x = VEH, y = log(PINCP)))
+
+ggplot (mn_pums_filtered) +
+  geom_jitter(aes(x = SEX_label, y = log(PINCP)))
+
+ggplot (mn_pums_filtered) +
+  geom_jitter(aes(x = AGEP, y = log(PINCP)))
+
+ggplot (mn_pums_filtered) +
+  geom_jitter(aes(x = WKHP, y = log(PINCP)))
+```
+  
+`get_pums()` returns some technical variables by default without the user needing to request them specifically. These technical variables are essential for uniquely identifying observations in the dataset and eventually performing any analysis and modeling. These default technical variables include:
+
+-   `SERIALNO`: a serial number that uniquely identifies households in the sample;
+
+-   `SPORDER`: the order of the person in the household, which when combined with `SERIALNO` uniquely identifies a person;
+
+-   `WGTP`: the household weight;
+
+-   `PWGTP`: the person weight;
+
+-   `ST`: the state FIPS code.
+
+Given that PUMS data are a *sample* of the US population, the weights columns must be used for analysis. In general terms, we can interpret the weights as "the number of observations in the general population represented by this particular row in the dataset." In turn, a row with a `PWGTP` value of 50 represents about 50 people in Minnesota with the same demographic characteristics of the "person" in that row.
+
+## What do my variables mean?
+
+What does a value of "b" mean for the household type (`HHT`) variable? Which sex gets a value of 1 vs 2? To find out details about the variables, `tidycensus` has a `pums_variables` object.
+
+```{r}
+#View(pums_variables)
+```
+
+Search for "HHT" and "SEX". For more details, go to the [PUMS documentation page](https://www.census.gov/programs-surveys/acs/microdata/documentation.html). While we could manually recode the data to make it more user friendly, `tidycensus` will do that for us with the option `recode = TRUE`.
+
+
+
+mn_pums <- get_pums(
+  variables = c("SEX", "AGEP", "HHT"),
+  state = "MN",
+  survey = "acs1",
+  year = 2021,
+  recode = TRUE
+)
+
+mn_pums
+
+
+## Variable Filters
+
+PUMS datasets, especially those from the 5-year ACS, can get quite large. Even users with speedy internet connections will need to be patient when downloading what could be millions of records from the Census API and potentially risk internet hiccups. When only subsets of data are required for an analysis, the `variables_filter` argument can return a subset of data from the API, reducing long download times.
+
+The `variables_filter` argument should be supplied as a named list where variable names (which can be quoted or unquoted) are paired with a data value or vector of data values to be requested from the API. The "filter" works by passing a special query to the Census API which will only return a subset of data, meaning that the entire dataset does not need to be first downloaded then filtered on the R side. This leads to substantial time savings for targeted queries.
+
+In the example below, the Minnesota request is modified with `variables_filter` to return only women (`SEX = 2`) between the ages of 30 and 49, but this time from the 5-year ACS PUMS.
+
+mn_pums_filtered <- get_pums(
+  variables = c("SEX", "AGEP", "HHT"),
+  state = "MN",
+  survey = "acs5",
+  variables_filter = list(
+    SEX = 2,
+    AGEP = 30:49
+  ),
+  year = 2021
+)
+
+mn_pums_filtered
+
+## Finding Variables for the Midterm Project
+
+There are a couple of good place to look for the variables that you might want to use in your project.
+
+-   `pums_variables` - This is mostly useful once you know a variable that you want and need to find the var_code to use with `get_pums()`.
+
+-   [data.census.gov](data.census.gov) - Use the search bar or find tables to search through possible variables.
+
+-   [censusreporter.org](censusreporter.org) - The topics section at the bottom of the page can give you some ideas of data that is collected by the ACS.
+
+Once you have found some variables, spend some time visualizing them and looking at the relationship between variables.
