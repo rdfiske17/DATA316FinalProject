@@ -1,0 +1,131 @@
+---
+title: "DATA_316_Mini_Project"
+author: "Riley Fiske, Emily Liddell"
+date: "2023-03-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(arm)
+```
+
+## Data Importation
+
+```{r}
+
+# Variables from https://data.census.gov/mdat/#/search?ds=ACSPUMS1Y2021
+
+mn_pums <- read.csv(file = "https://raw.githubusercontent.com/rdfiske17/DATA316MiniProject/main/mn_nums.csv")
+
+mn_pums <- mn_pums %>%
+  filter(PINCP >= 0) %>%
+  mutate(SEX = factor(SEX, levels=c(1,2), labels = c("Male","Female")))
+
+```
+
+## Data Visualization
+
+```{r}
+
+ggplot(data = mn_pums_filtered, aes(x = VEH)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = AGEP)) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = SEX)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = WKHP)) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = JWMNP)) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = log(JWMNP))) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = ESR)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = COW)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = log(PINCP))) +
+  geom_histogram()
+
+ggplot(data = mn_pums_filtered, aes(x = HINS4)) +
+  geom_histogram(stat = "count")
+
+ggplot(data = mn_pums_filtered, aes(x = HHLDRRAC1P)) +
+  geom_histogram(stat = "count")
+
+
+mn_pums_filtered2  <- filter(mn_pums_filtered, HHLDRRAC1P != 1)
+
+ggplot(mn_pums_filtered2, aes(x = JWMNP, y = log(PINCP))) +
+  geom_jitter(aes( color = as.factor(HHLDRRAC1P)), alpha = 0.2 )
+
+ggplot(mn_pums_filtered, aes(x = JWMNP, y = PINCP)) +
+  geom_jitter(aes( color = as.factor(HINS4)), alpha = 0.2 )
+
+```
+
+## Model 1 and starting visualization
+
+```{r}
+
+mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums, family = "gaussian")
+summary(mod1)
+beta1 <- coef(mod1)
+beta1
+
+func.1.JWMNP_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Female
+func.1.JWMNP_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Male
+ggplot(mn_pums, aes(x = JWMNP)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.JWMNP_female, color="red") +
+  geom_function(fun = func.1.JWMNP_male, color = "blue")
+
+func.1.VEH_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Female
+func.1.VEH_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP)   + beta1[[3]]*x +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Male
+ggplot(mn_pums, aes(x = VEH)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.VEH_female, color="red") +
+  geom_function(fun = func.1.VEH_male, color = "blue")
+
+func.1.WKHP_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x)} #Female
+func.1.WKHP_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP)   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x)} #Male
+ggplot(mn_pums, aes(x = WKHP)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.WKHP_female, color="red") +
+  geom_function(fun = func.1.WKHP_male, color = "blue")
+
+```
+
+## Candidate Models
+
+```{r}
+
+mod0 <- glm(log(PINCP) ~ JWMNP + VEH + SEX_label + AGEP + WKHP, data = mn_pums_filtered)
+summary(mod0)
+
+mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums_filtered)
+summary(mod1)
+
+mod2 <- glm(log(PINCP) ~ log(JWMNP) + VEH + AGEP + WKHP, data = mn_pums_filtered)
+summary(mod2)
+
+mod3 <- glm(log(PINCP) ~ log(JWMNP) + VEH + WKHP, data = mn_pums_filtered)
+summary(mod3)
+
+mod4 <- glm(log(PINCP) ~ log(JWMNP) +  WKHP, data = mn_pums_filtered)
+summary(mod4)
+
+mod5 <- glm(log(PINCP) ~ WKHP, data = mn_pums_filtered)
+summary(mod5)
+
+```
