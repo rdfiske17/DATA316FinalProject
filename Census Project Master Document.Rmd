@@ -30,102 +30,140 @@ mn_pums <- mn_pums %>%
 
 ```{r}
 
-ggplot(data = mn_pums_filtered, aes(x = VEH)) +
+ggplot(data = mn_pums, aes(x = VEH)) +
   geom_histogram(stat = "count")
 
-ggplot(data = mn_pums_filtered, aes(x = AGEP)) +
+ggplot(data = mn_pums, aes(x = AGEP)) +
   geom_histogram()
 
-ggplot(data = mn_pums_filtered, aes(x = SEX)) +
+ggplot(data = mn_pums, aes(x = SEX)) +
   geom_histogram(stat = "count")
 
-ggplot(data = mn_pums_filtered, aes(x = WKHP)) +
+ggplot(data = mn_pums, aes(x = WKHP)) +
   geom_histogram()
 
-ggplot(data = mn_pums_filtered, aes(x = JWMNP)) +
+ggplot(data = mn_pums, aes(x = JWMNP)) +
   geom_histogram()
 
-ggplot(data = mn_pums_filtered, aes(x = log(JWMNP))) +
+ggplot(data = mn_pums, aes(x = log(JWMNP))) +
   geom_histogram()
 
-ggplot(data = mn_pums_filtered, aes(x = ESR)) +
+ggplot(data = mn_pums, aes(x = ESR)) +
   geom_histogram(stat = "count")
 
-ggplot(data = mn_pums_filtered, aes(x = COW)) +
+ggplot(data = mn_pums, aes(x = COW)) +
   geom_histogram(stat = "count")
 
-ggplot(data = mn_pums_filtered, aes(x = log(PINCP))) +
+ggplot(data = mn_pums, aes(x = log(PINCP))) +
   geom_histogram()
 
-ggplot(data = mn_pums_filtered, aes(x = HINS4)) +
+ggplot(data = mn_pums, aes(x = HINS4)) +
   geom_histogram(stat = "count")
 
-ggplot(data = mn_pums_filtered, aes(x = HHLDRRAC1P)) +
+ggplot(data = mn_pums, aes(x = HHLDRRAC1P)) +
   geom_histogram(stat = "count")
 
 
-mn_pums_filtered2  <- filter(mn_pums_filtered, HHLDRRAC1P != 1)
+mn_pums2  <- filter(mn_pums, HHLDRRAC1P != 1)
 
-ggplot(mn_pums_filtered2, aes(x = JWMNP, y = log(PINCP))) +
+ggplot(mn_pums2, aes(x = JWMNP, y = log(PINCP))) +
   geom_jitter(aes( color = as.factor(HHLDRRAC1P)), alpha = 0.2 )
 
-ggplot(mn_pums_filtered, aes(x = JWMNP, y = PINCP)) +
+ggplot(mn_pums, aes(x = JWMNP, y = PINCP)) +
   geom_jitter(aes( color = as.factor(HINS4)), alpha = 0.2 )
 
 ```
 
-## Model 1 and starting visualization
+## Final Model
 
 ```{r}
-
-mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums, family = "gaussian")
+mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums)
 summary(mod1)
-beta1 <- coef(mod1)
-beta1
-
-func.1.JWMNP_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Female
-func.1.JWMNP_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Male
-ggplot(mn_pums, aes(x = JWMNP)) +
-  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
-  geom_function(fun = func.1.JWMNP_female, color="red") +
-  geom_function(fun = func.1.JWMNP_male, color = "blue")
-
-func.1.VEH_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Female
-func.1.VEH_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP)   + beta1[[3]]*x +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP))} #Male
-ggplot(mn_pums, aes(x = VEH)) +
-  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
-  geom_function(fun = func.1.VEH_female, color="red") +
-  geom_function(fun = func.1.VEH_male, color = "blue")
-
-func.1.WKHP_female <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x)} #Female
-func.1.WKHP_male <- function(x){plogis(beta1[[1]]+beta1[[2]]*mean(mn_pums$JWMNP)   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x)} #Male
-ggplot(mn_pums, aes(x = WKHP)) +
-  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
-  geom_function(fun = func.1.WKHP_female, color="red") +
-  geom_function(fun = func.1.WKHP_male, color = "blue")
-
 ```
 
 ## Candidate Models
 
 ```{r}
-
-mod0 <- glm(log(PINCP) ~ JWMNP + VEH + SEX_label + AGEP + WKHP, data = mn_pums_filtered)
+#first model
+mod0 <- glm(log(PINCP) ~ JWMNP + VEH + SEX_label + AGEP + WKHP, data = mn_pums)
 summary(mod0)
 
-mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums_filtered)
+#model we went with
+mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums)
 summary(mod1)
 
-mod2 <- glm(log(PINCP) ~ log(JWMNP) + VEH + AGEP + WKHP, data = mn_pums_filtered)
+#second model
+mod2 <- glm(log(PINCP) ~ log(JWMNP) + VEH + AGEP + WKHP, data = mn_pums)
 summary(mod2)
 
-mod3 <- glm(log(PINCP) ~ log(JWMNP) + VEH + WKHP, data = mn_pums_filtered)
+#third model
+mod3 <- glm(log(PINCP) ~ log(JWMNP) + VEH + WKHP, data = mn_pums)
 summary(mod3)
 
-mod4 <- glm(log(PINCP) ~ log(JWMNP) +  WKHP, data = mn_pums_filtered)
+#fourth model
+mod4 <- glm(log(PINCP) ~ log(JWMNP) +  WKHP, data = mn_pums)
 summary(mod4)
 
-mod5 <- glm(log(PINCP) ~ WKHP, data = mn_pums_filtered)
+#fifth model
+mod5 <- glm(log(PINCP) ~ WKHP, data = mn_pums)
 summary(mod5)
 
+anova(mod5, mod4, mod3,mod2,mod1, test="Chisq")
+# based on these results, we chose model 1. 
 ```
+
+## Visualizations
+
+```{r}
+beta1 <- coef(mod1)
+beta1
+
+# Visualization with everything held constant but JWMNP
+func.1.JWMNP_female <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
+func.1.JWMNP_male <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Male
+ggplot(mn_pums, aes(x = log(JWMNP))) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.JWMNP_female, color="red") +
+  geom_function(fun = func.1.JWMNP_male, color = "blue")
+
+# Visualization with everything held constant but VEH
+func.1.VEH_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
+func.1.VEH_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*x +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Male
+ggplot(mn_pums, aes(x = VEH)) +
+  geom_jitter(aes(y = log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.VEH_female, color="red") +
+  geom_function(fun = func.1.VEH_male, color = "blue")
+
+# Visualization with everything held constant but WKHP
+func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Female
+func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Male
+ggplot(mn_pums, aes(x = WKHP)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.WKHP_female, color="red") +
+  geom_function(fun = func.1.WKHP_male, color = "blue")
+
+# Visualization with everything held constant but AGEP
+func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Female
+func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Male
+ggplot(mn_pums, aes(x = AGEP)) +
+  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+  geom_function(fun = func.1.WKHP_female, color="red") +
+  geom_function(fun = func.1.WKHP_male, color = "blue")
+
+mn_pums$pred.1 <- predict(mod1, type = "response")
+mn_pums$res.1 <- log(mn_pums$PINCP) - mn_pums$pred.1
+sigma <- sigma(mod1)
+ggplot(mn_pums, aes(x=pred.1, y=res.1)) +
+  geom_point(alpha = 0.1) +
+  geom_hline(yintercept=0, color = "red") +
+  geom_hline(yintercept= c(sigma, -sigma), color="red", linetype="dashed") +
+  labs(x = "Predicted Personal Income", y = "Residuals")
+
+ggplot(mn_pums, aes(x = pred.1, y = log(PINCP))) +
+  geom_jitter(alpha = 0.1) +
+  geom_abline(color = "red") +
+  labs(title = "Fig. 6 Predicted Income vs. Actual Income", x = "Predicted Income", y = "Actual Income")
+
+  
+```
+
