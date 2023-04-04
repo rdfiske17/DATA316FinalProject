@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(arm)
+library(gridExtra)
+library(gridtext)
 ```
 
 ## Data Importation
@@ -31,59 +33,72 @@ mn_pums <- mn_pums %>%
 ```{r}
 
 ggplot(data = mn_pums, aes(x = VEH)) +
-  geom_histogram(stat = "count")
+  geom_histogram(stat = "count") +
+  labs(title = "Histogram of Vehicles Owned per Household", x = "Vehicles Owned", y = "Count")
 
 ggplot(data = mn_pums, aes(x = AGEP)) +
-  geom_histogram()
+  geom_histogram() +
+  labs(title = "Histogram of Age", x = "Age", y = "Count")
 
 ggplot(data = mn_pums, aes(x = SEX)) +
-  geom_histogram(stat = "count")
+  geom_histogram(stat = "count") +
+  labs(title = "Histogram of Sex", x = "Sex", y = "Count")
 
 ggplot(data = mn_pums, aes(x = WKHP)) +
-  geom_histogram()
+  geom_histogram() +
+  labs(title = "Histogram of Average Hours Worked per Week", x = "Average Hours Worked per Week", y = "Count")
 
-ggplot(data = mn_pums, aes(x = JWMNP)) +
-  geom_histogram()
+plot_travel <- ggplot(data = mn_pums, aes(x = JWMNP)) +
+  geom_histogram() +
+  labs(title = "Travel Time to Work", x = "Travel Time to Work", y = "Count")
 
-ggplot(data = mn_pums, aes(x = log(JWMNP))) +
-  geom_histogram()
+plot_logtravel <- ggplot(data = mn_pums, aes(x = log(JWMNP))) +
+  geom_histogram() +
+  labs(title = "Log Travel Time to Work", x = "Log Travel Time to Work", y = "Count")
+
+grid.arrange(plot_travel, plot_logtravel, nrow=1, top=richtext_grob("Figure 2")) #https://community.rstudio.com/t/common-axis-title-in-grid-arrange/96353
 
 ggplot(data = mn_pums, aes(x = ESR)) +
-  geom_histogram(stat = "count")
+  geom_histogram(stat = "count") +
+    labs(title = "Histogram of Employment Status", x = "Employment Status", y = "Count")
 
 ggplot(data = mn_pums, aes(x = COW)) +
-  geom_histogram(stat = "count")
+  geom_histogram(stat = "count") +
+    labs(title = "Histogram of Class of Worker", x = "Class of Worker", y = "Count")
+
+ggplot(data = mn_pums, aes(x = PINCP)) +
+  geom_histogram() +
+    labs(title = "Figure 1: Histogram of Income", x = "Income", y = "Count")
 
 ggplot(data = mn_pums, aes(x = log(PINCP))) +
-  geom_histogram()
+  geom_histogram() +
+    labs(title = "Histogram of Log Income", x = "Log Income", y = "Count")
 
 ggplot(data = mn_pums, aes(x = HINS4)) +
-  geom_histogram(stat = "count")
+  geom_histogram(stat = "count") +
+    labs(title = "Histogram of Medicaid Status", x = "Medicaid Status", y = "Count")
 
 ggplot(data = mn_pums, aes(x = HHLDRRAC1P)) +
-  geom_histogram(stat = "count")
+  geom_histogram(stat = "count") +
+    labs(title = "Histogram of Race", x = "Race", y = "Count")
 
 
 mn_pums2  <- filter(mn_pums, HHLDRRAC1P != 1)
 
 ggplot(mn_pums2, aes(x = JWMNP, y = log(PINCP))) +
-  geom_jitter(aes( color = as.factor(HHLDRRAC1P)), alpha = 0.2 )
+  geom_jitter(aes( color = as.factor(HHLDRRAC1P)), alpha = 0.2 ) +
+  labs(title = "Figure 3: Commute Time vs. Log Income by Race", x = "Travel time to Work", y = "Log Income", color = "Race")
 
 ggplot(mn_pums, aes(x = JWMNP, y = PINCP)) +
-  geom_jitter(aes( color = as.factor(HINS4)), alpha = 0.2 )
+  geom_jitter(aes( color = as.factor(HINS4)), alpha = 0.2 ) +
+    labs(title = "Figure 4: Commute Time vs. Income by Medicaid Status", x = "Travel time to Work", y = "Income", color = "Medicaid Status")
 
-```
-
-## Final Model
-
-```{r}
-mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums)
-summary(mod1)
 ```
 
 ## Candidate Models
 
 ```{r}
+
 #first model
 mod0 <- glm(log(PINCP) ~ JWMNP + VEH + SEX_label + AGEP + WKHP, data = mn_pums)
 summary(mod0)
@@ -110,11 +125,37 @@ summary(mod5)
 
 anova(mod5, mod4, mod3,mod2,mod1, test="Chisq")
 # based on these results, we chose model 1. 
+
 ```
 
-## Visualizations
+## Final Model
 
 ```{r}
+
+mod1 <- glm(log(PINCP) ~ log(JWMNP) + VEH + SEX_label + AGEP + WKHP, data = mn_pums)
+summary(mod1)
+
+#coef interpretation
+
+beta1 <- coef(mod1)
+beta1
+
+#Intercept
+exp(beta1[1] + beta1[2]*0 + beta1[3]*0 +            beta1[5]*mean(mn_pums$AGEP) + beta1[6]*40) #We predict a female with a 0 minute commute, 0 vehicles, works 40 hours a week, and is average age to make $32418.01 annually
+exp(beta1[1] + beta1[2]*0 + beta1[3]*0 + beta1[4] + beta1[5]*mean(mn_pums$AGEP) + beta1[6]*40) #We predict a male with a 0 minute commute, 0 vehicles, works 40 hours a week, and is average age to make $37618.23 annually
+
+#log(JWMNP)
+#We predict a one percent increase in travel time to work corresponds to a 0.09% increase in annual income
+
+#VEH
+(beta1[3]/100) #We predict a difference in one percent of annual income negatively corresponds to a difference in 0.0003179087 [PRETTY UP!]
+
+```
+
+## Variable Visualizations
+
+```{r}
+
 beta1 <- coef(mod1)
 beta1
 
@@ -124,7 +165,8 @@ func.1.JWMNP_male <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pu
 ggplot(mn_pums, aes(x = log(JWMNP))) +
   geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
   geom_function(fun = func.1.JWMNP_female, color="red") +
-  geom_function(fun = func.1.JWMNP_male, color = "blue")
+  geom_function(fun = func.1.JWMNP_male, color = "blue") +
+  labs(title = "Travel Time to Work vs. Predicted Income", x = "Travel Time (min)", y = "Predicted Income")
 
 # Visualization with everything held constant but VEH
 func.1.VEH_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
@@ -132,7 +174,8 @@ func.1.VEH_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   
 ggplot(mn_pums, aes(x = VEH)) +
   geom_jitter(aes(y = log(PINCP)), width = 0, height = 0.05) +
   geom_function(fun = func.1.VEH_female, color="red") +
-  geom_function(fun = func.1.VEH_male, color = "blue")
+  geom_function(fun = func.1.VEH_male, color = "blue") +
+  labs(title = "Household Vehicles Owned vs. Predicted Income", x = "Number of Vehicles", y = "Predicted Income")
 
 # Visualization with everything held constant but WKHP
 func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Female
@@ -140,7 +183,8 @@ func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))  
 ggplot(mn_pums, aes(x = WKHP)) +
   geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
   geom_function(fun = func.1.WKHP_female, color="red") +
-  geom_function(fun = func.1.WKHP_male, color = "blue")
+  geom_function(fun = func.1.WKHP_male, color = "blue") +
+  labs(title = "Average Hours Worked per Week vs. Predicted Income", x = "Average Hours Worked per Week", y = "Predicted Income")
 
 # Visualization with everything held constant but AGEP
 func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Female
@@ -148,7 +192,14 @@ func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))  
 ggplot(mn_pums, aes(x = AGEP)) +
   geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
   geom_function(fun = func.1.WKHP_female, color="red") +
-  geom_function(fun = func.1.WKHP_male, color = "blue")
+  geom_function(fun = func.1.WKHP_male, color = "blue") +
+  labs(title = "Age vs. Predicted Income", x = "Age", y = "Predicted Income")
+
+```
+
+## Final Model Analysis
+
+```{r}
 
 mn_pums$pred.1 <- predict(mod1, type = "response")
 mn_pums$res.1 <- log(mn_pums$PINCP) - mn_pums$pred.1
@@ -163,7 +214,5 @@ ggplot(mn_pums, aes(x = pred.1, y = log(PINCP))) +
   geom_jitter(alpha = 0.1) +
   geom_abline(color = "red") +
   labs(title = "Fig. 6 Predicted Income vs. Actual Income", x = "Predicted Income", y = "Actual Income")
-
   
 ```
-
