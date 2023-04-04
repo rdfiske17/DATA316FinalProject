@@ -128,7 +128,7 @@ anova(mod5, mod4, mod3,mod2,mod1, test="Chisq")
 
 ```
 
-## Final Model
+## Final Model & Coefficient Interpretation
 
 ```{r}
 
@@ -144,11 +144,20 @@ beta1
 exp(beta1[1] + beta1[2]*0 + beta1[3]*0 +            beta1[5]*mean(mn_pums$AGEP) + beta1[6]*40) #We predict a female with a 0 minute commute, 0 vehicles, works 40 hours a week, and is average age to make $32418.01 annually
 exp(beta1[1] + beta1[2]*0 + beta1[3]*0 + beta1[4] + beta1[5]*mean(mn_pums$AGEP) + beta1[6]*40) #We predict a male with a 0 minute commute, 0 vehicles, works 40 hours a week, and is average age to make $37618.23 annually
 
-#log(JWMNP)
+# Source Used for variable interpretation: https://stats.oarc.ucla.edu/sas/faq/how-can-i-interpret-log-transformed-variables-in-terms-of-percent-change-in-linear-regression/
+
+#log(JWMNP), independent and dependent variable transformation
 #We predict a one percent increase in travel time to work corresponds to a 0.09% increase in annual income
 
-#VEH
-(beta1[3]/100) #We predict a difference in one percent of annual income negatively corresponds to a difference in 0.0003179087 [PRETTY UP!]
+#VEH, dependent variable transformation
+(exp(beta1[3]) - 1) * 100 #We predict a difference in one vehicle corresponds to a decrease in annual income by 3.12%
+
+#AGEP, dependent variable transformation
+(exp(beta1[5]) - 1) * 100 #We predict a difference in one year in age corresponds to an increase in annual income by 1.95%
+
+#WKHP, dependent variable transformation
+(exp(beta1[6]) - 1) * 100 #We predict a difference in one hour worked on average per week corresponds to an increase in annual income by 3.73%
+
 
 ```
 
@@ -160,40 +169,46 @@ beta1 <- coef(mod1)
 beta1
 
 # Visualization with everything held constant but JWMNP
-func.1.JWMNP_female <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
-func.1.JWMNP_male <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Male
-ggplot(mn_pums, aes(x = log(JWMNP))) +
-  geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
+func.1.JWMNP_male <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
+func.1.JWMNP_female <- function(x){beta1[[1]]+beta1[[2]]*x + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Male
+plot_predlogJWMNP <- ggplot(mn_pums, aes(x = log(JWMNP))) +
+  geom_jitter(aes(y=log(PINCP)), width = 0.05, height = 0.05) +
   geom_function(fun = func.1.JWMNP_female, color="red") +
   geom_function(fun = func.1.JWMNP_male, color = "blue") +
-  labs(title = "Travel Time to Work vs. Predicted Income", x = "Travel Time (min)", y = "Predicted Income")
+  labs(title = "Figure 7: Log Travel Time to Work vs. Predicted Income", x = "Log Travel Time", y = "Predicted Income")
 
 # Visualization with everything held constant but VEH
-func.1.VEH_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
-func.1.VEH_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*x +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Male
-ggplot(mn_pums, aes(x = VEH)) +
-  geom_jitter(aes(y = log(PINCP)), width = 0, height = 0.05) +
+func.1.VEH_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*x + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Female
+func.1.VEH_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*x +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*mean(mn_pums$WKHP)} #Male
+plot_predVEH <- ggplot(mn_pums, aes(x = VEH)) +
+  geom_jitter(aes(y = log(PINCP)), width = 0.25, height = 0.05) +
   geom_function(fun = func.1.VEH_female, color="red") +
   geom_function(fun = func.1.VEH_male, color = "blue") +
-  labs(title = "Household Vehicles Owned vs. Predicted Income", x = "Number of Vehicles", y = "Predicted Income")
+  labs(title = "Figure 8: Household Vehicles Owned vs. Predicted Income", x = "Number of Vehicles", y = "Predicted Income")
 
 # Visualization with everything held constant but WKHP
-func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Female
-func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Male
-ggplot(mn_pums, aes(x = WKHP)) +
+func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Female
+func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*mean(mn_pums$AGEP) + beta1[[6]]*x} #Male
+plot_predWKHP <- ggplot(mn_pums, aes(x = WKHP)) +
   geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
   geom_function(fun = func.1.WKHP_female, color="red") +
   geom_function(fun = func.1.WKHP_male, color = "blue") +
-  labs(title = "Average Hours Worked per Week vs. Predicted Income", x = "Average Hours Worked per Week", y = "Predicted Income")
+  labs(title = "Average Hours Worked per Week", x = "Average Hours Worked per Week", y = "Predicted Income")
 
 # Visualization with everything held constant but AGEP
-func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Female
-func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Male
-ggplot(mn_pums, aes(x = AGEP)) +
+func.1.WKHP_male <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP)) + beta1[[3]]*mean(mn_pums$VEH) + beta1[[4]] + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Female
+func.1.WKHP_female <- function(x){beta1[[1]]+beta1[[2]]*mean(log(mn_pums$JWMNP))   + beta1[[3]]*mean(mn_pums$VEH) +            + beta1[[5]]*x + beta1[[6]]*mean(mn_pums$WKHP)} #Male
+plot_predage <- ggplot(mn_pums, aes(x = AGEP)) +
   geom_jitter(aes(y=log(PINCP)), width = 0, height = 0.05) +
   geom_function(fun = func.1.WKHP_female, color="red") +
   geom_function(fun = func.1.WKHP_male, color = "blue") +
   labs(title = "Age vs. Predicted Income", x = "Age", y = "Predicted Income")
+
+plot_predlogJWMNP
+
+plot_predVEH
+
+grid.arrange(plot_predWKHP, plot_predage, nrow = 1, top=richtext_grob("Figure 9"))
 
 ```
 
@@ -208,11 +223,11 @@ ggplot(mn_pums, aes(x=pred.1, y=res.1)) +
   geom_point(alpha = 0.1) +
   geom_hline(yintercept=0, color = "red") +
   geom_hline(yintercept= c(sigma, -sigma), color="red", linetype="dashed") +
-  labs(x = "Predicted Personal Income", y = "Residuals")
+  labs(title= "Figure 5: Predicted Annual Income vs. Residuals",x = "Predicted Personal Income", y = "Residuals")
 
 ggplot(mn_pums, aes(x = pred.1, y = log(PINCP))) +
   geom_jitter(alpha = 0.1) +
   geom_abline(color = "red") +
-  labs(title = "Fig. 6 Predicted Income vs. Actual Income", x = "Predicted Income", y = "Actual Income")
+  labs(title = "Figure 6: Predicted Income vs. Actual Income", x = "Predicted Income", y = "Actual Income")
   
 ```
