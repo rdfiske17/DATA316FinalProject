@@ -45,7 +45,7 @@ agg_data <- agg_data %>%
          reporting_level == "national")
 
 agg_data_male <- agg_data %>%
-  select(country, Year, Life.expectancy.at.birth..years..1, GDP.per.capita..PPP..constant.2017.international..., Population..historical.estimates., Human.Development.Index, headcount_ratio_international_povline, Average.Total.Years.of.Schooling.for.Adult.Population..Lee.Lee..2016...Barro.Lee..2018..and.UNDP..2018...x) %>%
+  dplyr::select(country, Year, Life.expectancy.at.birth..years..1, GDP.per.capita..PPP..constant.2017.international..., Population..historical.estimates., Human.Development.Index, headcount_ratio_international_povline, Average.Total.Years.of.Schooling.for.Adult.Population..Lee.Lee..2016...Barro.Lee..2018..and.UNDP..2018...x) %>%
   mutate(sex = "Male") %>%
   rename(life_expectancy = Life.expectancy.at.birth..years..1,
          gdp_per_capita = GDP.per.capita..PPP..constant.2017.international...,
@@ -55,7 +55,7 @@ agg_data_male <- agg_data %>%
          schooling_years = Average.Total.Years.of.Schooling.for.Adult.Population..Lee.Lee..2016...Barro.Lee..2018..and.UNDP..2018...x)
 
 agg_data_female <- agg_data %>%
-  select(country, Year, Life.expectancy.at.birth..years..2, GDP.per.capita..PPP..constant.2017.international..., Population..historical.estimates., Human.Development.Index, headcount_ratio_international_povline, Average.Total.Years.of.Schooling.for.Adult.Population..Lee.Lee..2016...Barro.Lee..2018..and.UNDP..2018...x) %>%
+  dplyr::select(country, Year, Life.expectancy.at.birth..years..2, GDP.per.capita..PPP..constant.2017.international..., Population..historical.estimates., Human.Development.Index, headcount_ratio_international_povline, Average.Total.Years.of.Schooling.for.Adult.Population..Lee.Lee..2016...Barro.Lee..2018..and.UNDP..2018...x) %>%
   mutate(sex = "Female") %>%
   rename(life_expectancy = Life.expectancy.at.birth..years..2,
          gdp_per_capita = GDP.per.capita..PPP..constant.2017.international...,
@@ -65,7 +65,9 @@ agg_data_female <- agg_data %>%
          schooling_years = Average.Total.Years.of.Schooling.for.Adult.Population..Lee.Lee..2016...Barro.Lee..2018..and.UNDP..2018...x)
 
 final_data <- rbind(agg_data_male, agg_data_female) %>%
-  arrange(country)
+  arrange(country) %>%
+  filter(case_when(country == "Philippines" ~ ratio_below_povline > 8,
+                   TRUE ~ ratio_below_povline > 0))
 
 write_csv(final_data, file="life_expectancy_data.csv")
 
