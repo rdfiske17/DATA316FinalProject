@@ -43,7 +43,7 @@ ggplot(data = life_data) +
 ggplot(data = life_data) +
   geom_point(aes(x = gdp_per_capita, y = fct_reorder(country,gdp_per_capita)))
 
-ggplot(data = life_data) +
+ggplot(data = final_data) +
   geom_point(aes(x = ratio_below_povline, y = fct_reorder(country,-ratio_below_povline)))
 
 ```

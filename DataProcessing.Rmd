@@ -71,6 +71,6 @@ final_data <- rbind(agg_data_male, agg_data_female) %>%
                    country == "Serbia" ~ ratio_below_povline > 0.08,
                    TRUE ~ ratio_below_povline >= 0))
 
-write_csv(final_data, file="life_expectancy_data.csv", append = TRUE)
+write_csv(final_data, file="life_expectancy_data.csv", append = FALSE)
 
 ```
