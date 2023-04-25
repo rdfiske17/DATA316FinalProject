@@ -1,0 +1,48 @@
+---
+title: "DATA 316 Final Project"
+author: "Emily Liddell and Riley Fiske"
+date: "2023-04-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyverse)
+```
+
+#Read in csv
+```{r}
+life_expectancy <- read.csv("https://raw.githubusercontent.com/rdfiske17/DATA316FinalProject/main/Datasets/life_expectancy_data.csv")
+```
+
+#Visualize the data
+```{r}
+ggplot(life_expectancy, aes(x = gdp_per_capita, y = life_expectancy)) +
+  geom_jitter(aes(color = sex))
+
+ggplot(life_expectancy, aes(x = log(population), y = life_expectancy)) +
+  geom_jitter(aes(color = sex))
+
+ggplot(life_expectancy, aes(x = hdi, y = life_expectancy)) +
+  geom_jitter(aes(color = sex))
+
+ggplot(life_expectancy, aes(x = log(ratio_below_povline), y = life_expectancy)) +
+  geom_jitter(aes(color = sex))
+
+ggplot(life_expectancy, aes(x = schooling_years, y = life_expectancy)) +
+  geom_jitter(aes(color = sex))
+```
+#Create the model
+```{r}
+life.expectancy.model <- lm(life_expectancy ~ -1 + gdp_per_capita + log(ratio_below_povline + 0.01) + schooling_years + as.factor(sex), data = life_expectancy)
+summary(life.expectancy.model)
+```
+#Visualize the model
+```{r}
+life_expectancy$pred.1 <- predict(life.expectancy.model)
+
+ggplot(life_expectancy, aes(x = life_expectancy, y =pred.1)) +
+  geom_jitter() +
+  geom_abline()
+```

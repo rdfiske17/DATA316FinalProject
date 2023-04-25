@@ -56,6 +56,7 @@ mod.5 <- lm(life_expectancy ~ -1 + gdp_per_capita + log(ratio_below_povline + .0
 summary(mod.5)
 
 ```
+
 ```{r}
 
 life_data$pred.5 <- predict(mod.5)
