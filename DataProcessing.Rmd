@@ -67,8 +67,10 @@ agg_data_female <- agg_data %>%
 final_data <- rbind(agg_data_male, agg_data_female) %>%
   arrange(country) %>%
   filter(case_when(country == "Philippines" ~ ratio_below_povline > 8,
-                   TRUE ~ ratio_below_povline > 0))
+                   country == "Poland" ~ ratio_below_povline > 0,
+                   country == "Serbia" ~ ratio_below_povline > 0.08,
+                   TRUE ~ ratio_below_povline >= 0))
 
-write_csv(final_data, file="life_expectancy_data.csv")
+write_csv(final_data, file="life_expectancy_data.csv", append = TRUE)
 
 ```
