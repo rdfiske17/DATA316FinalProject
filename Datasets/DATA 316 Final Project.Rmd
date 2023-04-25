@@ -40,6 +40,34 @@ summary(life.expectancy.model)
 ```
 #Visualize the model
 ```{r}
+GDPlineF <- function(x){coef(life.expectancy.model)[1]*x + coef(life.expectancy.model)[2]*mean(log(life_expectancy$ratio_below_povline+0.01)) + coef(life.expectancy.model)[3]*mean(life_expectancy$schooling_years) + coef(life.expectancy.model)[4]}
+
+GDPlineM <- function(x){coef(life.expectancy.model)[1]*x + coef(life.expectancy.model)[2]*mean(log(life_expectancy$ratio_below_povline+0.01)) + coef(life.expectancy.model)[3]*mean(life_expectancy$schooling_years) + coef(life.expectancy.model)[5]}
+
+ratiolineF <- function(x){coef(life.expectancy.model)[1]*mean(life_expectancy$gdp_per_capita) + coef(life.expectancy.model)[2]*x + coef(life.expectancy.model)[3]*mean(life_expectancy$schooling_years) + coef(life.expectancy.model)[4]}
+
+ratiolineM <- function(x){coef(life.expectancy.model)[1]*mean(life_expectancy$gdp_per_capita) + coef(life.expectancy.model)[2]*x + coef(life.expectancy.model)[3]*mean(life_expectancy$schooling_years) + coef(life.expectancy.model)[5]}
+
+schoollineF <- function(x){coef(life.expectancy.model)[1]*mean(life_expectancy$gdp_per_capita) + coef(life.expectancy.model)[2]*mean(log(life_expectancy$ratio_below_povline+0.01)) + coef(life.expectancy.model)[3]*x + coef(life.expectancy.model)[4]}
+
+schoollineM <- function(x){coef(life.expectancy.model)[1]*mean(life_expectancy$gdp_per_capita) + coef(life.expectancy.model)[2]*mean(log(life_expectancy$ratio_below_povline+0.01)) + coef(life.expectancy.model)[3]*x + coef(life.expectancy.model)[5]}
+
+ggplot(life_expectancy, aes(x = gdp_per_capita, y = life_expectancy)) +
+  geom_jitter(aes(color = sex)) +
+  geom_function(fun = GDPlineF, aes(color = "Female")) +
+  geom_function(fun = GDPlineM, aes(color = "Male"))
+
+ggplot(life_expectancy, aes(x = log(ratio_below_povline), y = life_expectancy)) +
+  geom_jitter(aes(color = sex)) +
+  geom_function(fun = ratiolineF, aes(color = "Female")) +
+  geom_function(fun = ratiolineM, aes(color = "Male"))
+
+ggplot(life_expectancy, aes(x = schooling_years, y = life_expectancy)) +
+  geom_jitter(aes(color = sex)) +
+  geom_function(fun = schoollineF, aes(color = "Female")) +
+  geom_function(fun = schoollineM, aes(color = "Male"))
+
+
 life_expectancy$pred.1 <- predict(life.expectancy.model)
 
 ggplot(life_expectancy, aes(x = life_expectancy, y =pred.1)) +
