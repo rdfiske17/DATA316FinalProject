@@ -20,7 +20,7 @@ library(gridtext)
 
 # Variables from https://data.census.gov/mdat/#/search?ds=ACSPUMS1Y2021
 
-mn_pums <- read.csv(file = "https://raw.githubusercontent.com/rdfiske17/DATA316MiniProject/main/mn_nums.csv")
+mn_pums <- read.csv(file = "https://raw.githubusercontent.com/rdfiske17/DATA316FinalProject/main/MiniProject/mn_nums.csv")
 
 mn_pums <- mn_pums %>%
   filter(PINCP >= 0) %>%
