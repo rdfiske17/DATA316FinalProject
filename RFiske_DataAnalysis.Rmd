@@ -191,3 +191,4 @@ predict(mod.5, newdata = USdata)
 ```
 
 
+>>>>>>> Stashed changes
