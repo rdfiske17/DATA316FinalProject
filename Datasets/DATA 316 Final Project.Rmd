@@ -36,7 +36,14 @@ ggplot(life_expectancy, aes(x = schooling_years, y = life_expectancy)) +
 #Create the model
 ```{r}
 life.expectancy.model <- lm(life_expectancy ~ -1 + gdp_per_capita + log(ratio_below_povline + 0.01) + schooling_years + as.factor(sex), data = life_expectancy)
-summary(life.expectancy.model)
+summary.mod <- summary(life.expectancy.model)
+summary.mod
+summary.mod$sigma
+var(life_expectancy$life_expectancy)
+var(residuals(life.expectancy.model))
+cor(life_expectancy$life_expectancy, predict(life.expectancy.model))^2
+
+1-var(residuals(life.expectancy.model))/var(life_expectancy$life_expectancy)
 ```
 #Visualize the model
 ```{r}
